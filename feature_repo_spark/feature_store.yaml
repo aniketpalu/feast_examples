@@ -1,0 +1,14 @@
+project: minimal_example
+registry: data/registry.db
+provider: local
+online_store:
+  type: sqlite
+  path: data/online_store.db
+offline_store:
+  type: spark
+  spark_conf:
+    spark.sql.warehouse.dir: /tmp/spark-warehouse
+    spark.driver.memory: 2g
+    spark.executor.memory: 2g
+entity_key_serialization_version: 3
+

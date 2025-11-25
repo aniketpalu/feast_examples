@@ -1,0 +1,24 @@
+project: minimal_example
+provider: local
+registry:
+  registry_type: sql
+  path: postgresql+psycopg://feast:feast@localhost:5432/feast
+  cache_ttl_seconds: 60
+online_store:
+  type: postgres
+  host: localhost
+  port: 5432
+  database: feast
+  db_schema: public
+  user: feast
+  password: feast
+offline_store:
+  type: postgres
+  host: localhost
+  port: 5432
+  database: feast
+  db_schema: public
+  user: feast
+  password: feast
+entity_key_serialization_version: 3
+

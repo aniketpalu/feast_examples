@@ -1,0 +1,13 @@
+entity_key_serialization_version: 3
+offline_store:
+  host: 127.0.0.1
+  port: 8815
+  type: remote
+online_store:
+  path: http://127.0.0.1:6566
+  type: remote
+project: minimal_example
+provider: local
+registry:
+  path: localhost:6570
+  registry_type: remote
