@@ -2,6 +2,7 @@ from datetime import timedelta
 from feast import Entity, FeatureView, Field, ValueType
 from feast.types import Int64, Float32, UnixTimestamp
 from feast.infra.offline_stores.file_source import FileSource
+from feast.data_source import PushSource
 from feast.data_format import ParquetFormat
 
 # Entity: User
@@ -20,6 +21,11 @@ user_stats_source = FileSource(
     file_format=ParquetFormat(),
 )
 
+offline_push_source = PushSource(
+    name="user_stats_source",
+    batch_source=user_stats_source,
+)
+
 # Feature view for user statistics
 user_stats_fv = FeatureView(
     name="user_stats",
@@ -30,7 +36,7 @@ user_stats_fv = FeatureView(
         Field(name="total_transactions", dtype=Int64),
         Field(name="last_active_date", dtype=UnixTimestamp),
     ],
-    source=user_stats_source,
+    source=offline_push_source,
     online=True,
 )
 

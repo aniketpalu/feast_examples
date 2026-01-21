@@ -1,6 +1,5 @@
 """
-Script to set up sample data in Parquet format for Spark offline store
-Spark requires microsecond precision timestamps (not nanosecond)
+Script to set up sample data in Parquet format for Ray offline store
 
 This script creates MULTIPLE TRANSACTIONS per user at different timestamps.
 This enables testing of get_historical_features() with date ranges where
@@ -11,16 +10,16 @@ from datetime import datetime, timedelta
 import random
 import os
 
-# Set random seed for reproducibility (same seed as Ray for consistent testing)
+# Set random seed for reproducibility
 random.seed(42)
 
 # Create data directory if it doesn't exist
-os.makedirs("feature_repo_spark/data", exist_ok=True)
+os.makedirs("feature_repo_ray/data", exist_ok=True)
 
-print("Creating sample user_stats data for Spark...")
+print("Creating sample user_stats data for Ray...")
 print("📊 Generating MULTIPLE transactions per user for time-range testing\n")
 
-# Configuration (same as Ray for consistent testing)
+# Configuration
 NUM_USERS = 50  # Number of unique users
 MIN_TRANSACTIONS_PER_USER = 3
 MAX_TRANSACTIONS_PER_USER = 10
@@ -55,24 +54,16 @@ df = pd.DataFrame(data)
 # Sort by user_id and timestamp for easier inspection
 df = df.sort_values(['user_id', 'created_timestamp']).reset_index(drop=True)
 
-# Convert timestamp to microsecond precision for Spark compatibility
-# Spark doesn't support nanosecond precision timestamps
-df['created_timestamp'] = pd.to_datetime(df['created_timestamp']).dt.floor('us')
+# Save to Parquet
+# Ray can handle both nanosecond and microsecond precision, but microsecond is safer
+df['created_timestamp'] = df['created_timestamp'].dt.round('us')
 
-# Save to Parquet with Spark-compatible settings
-parquet_path = "feature_repo_spark/data/user_stats.parquet"
-df.to_parquet(
-    parquet_path, 
-    index=False,
-    engine='pyarrow',  # Use PyArrow for better Spark compatibility
-    coerce_timestamps='us',  # Coerce timestamps to microsecond precision
-    allow_truncated_timestamps=True  # Allow truncation if needed
-)
+parquet_path = "feature_repo_ray/data/user_stats.parquet"
+df.to_parquet(parquet_path, index=False, engine='pyarrow', allow_truncated_timestamps=True)
 
 print(f"✅ Created {parquet_path} with {len(df)} records")
 print(f"   - {NUM_USERS} unique users")
 print(f"   - {MIN_TRANSACTIONS_PER_USER}-{MAX_TRANSACTIONS_PER_USER} transactions per user")
-print(f"📅 Timestamp precision: microseconds (Spark-compatible)")
 
 # Show transaction count per user
 txn_counts = df.groupby('user_id').size()
@@ -84,11 +75,11 @@ print(f"\n📅 Timestamp range:")
 print(f"   From: {df['created_timestamp'].min()}")
 print(f"   To:   {df['created_timestamp'].max()}")
 
-# Show sample data for a specific user (user_id=17 as used in testing)
+# Show sample data for a specific user (user_id=17 as mentioned in the task)
 print(f"\n👤 Sample data for user_id=17:")
 user_17_data = df[df['user_id'] == 17][['user_id', 'created_timestamp', 'avg_transaction_amount', 'total_transactions']]
 print(user_17_data.to_string(index=False))
 print(f"   Total transactions for user 17: {len(user_17_data)}")
 
-print("\n✅ Sample data setup complete for Spark!")
+print("\n✅ Sample data setup complete!")
 

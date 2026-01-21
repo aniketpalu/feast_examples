@@ -1,0 +1,16 @@
+project: minimal_example
+registry: data/registry.db
+provider: local
+online_store:
+  type: sqlite
+  path: data/online_store.db
+offline_store:
+  type: ray
+  storage_path: data/ray_storage  # Required: Path for storing Ray datasets
+  # Optional Ray configuration for resource management
+  broadcast_join_threshold_mb: 25
+  max_parallelism_multiplier: 1
+  target_partition_size_mb: 16
+  enable_ray_logging: false
+entity_key_serialization_version: 3
+
