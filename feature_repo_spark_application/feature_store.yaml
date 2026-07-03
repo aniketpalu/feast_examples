@@ -1,0 +1,38 @@
+project: feast_sparkapp_e2e
+provider: local
+registry:
+  registry_type: remote
+  path: feast-byos-spark-e2e-registry.aniket-cursor-test.svc.cluster.local:80
+offline_store:
+  type: spark
+  spark_conf:
+    spark.hadoop.fs.s3a.endpoint: "http://minio.aniket-cursor-test.svc.cluster.local:9000"
+    spark.hadoop.fs.s3a.access.key: "minioadmin"
+    spark.hadoop.fs.s3a.secret.key: "minioadmin"
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+online_store:
+  type: redis
+  connection_string: redis.aniket-cursor-test.svc.cluster.local:6379
+batch_engine:
+  type: spark_application
+  image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-0.9
+  namespace: aniket-cursor-test
+  service_account: feast-spark-driver
+  executor_instances: 5
+  executor_cores: 1
+  executor_memory: "2g"
+  driver_cores: 1
+  driver_memory: "2g"
+  concurrency: 10
+  registry_address: feast-byos-spark-e2e-registry.aniket-cursor-test.svc.cluster.local:80
+  spark_conf:
+    spark.hadoop.fs.s3a.endpoint: "http://minio.aniket-cursor-test.svc.cluster.local:9000"
+    spark.hadoop.fs.s3a.access.key: "minioadmin"
+    spark.hadoop.fs.s3a.secret.key: "minioadmin"
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+entity_key_serialization_version: 3
+auth:
+  type: no_auth

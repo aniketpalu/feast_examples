@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: feast-e2e-materialize
+  namespace: aniket-cursor-test
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: feast-spark-driver
+      restartPolicy: Never
+      containers:
+        - name: feast-cli
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-0.9
+          command: ["/bin/bash", "-c"]
+          env:
+            - name: PYTHONPATH
+              value: "/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.9-src.zip"
+            - name: SPARK_HOME
+              value: "/opt/spark"
+          args:
+            - |
+              set -e
+              echo "=== Step 1: Setting up feature repo ==="
+              mkdir -p /tmp/feast-repo
+              cp /config/* /tmp/feast-repo/
+              cd /tmp/feast-repo
+              ls -la
+              cat feature_store.yaml
+
+              echo ""
+              echo "=== Step 2: feast apply ==="
+              feast -c /tmp/feast-repo apply
+
+              echo ""
+              echo "=== Step 3: Check registered feature views ==="
+              feast -c /tmp/feast-repo feature-views list
+
+              echo ""
+              echo "=== Step 4: feast materialize ==="
+              feast -c /tmp/feast-repo materialize 2024-01-01T00:00:00 2024-01-02T00:00:00
+
+              echo ""
+              echo "=== Step 5: Post-materialization FV states ==="
+              feast -c /tmp/feast-repo feature-views list
+
+              echo ""
+              echo "=== E2E COMPLETE ==="
+          volumeMounts:
+            - name: feast-repo
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+      volumes:
+        - name: feast-repo
+          configMap:
+            name: feast-e2e-repo
