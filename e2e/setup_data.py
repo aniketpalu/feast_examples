@@ -57,7 +57,10 @@ def main():
         })
 
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as f:
-            pq.write_table(pa.Table.from_pandas(df), f.name, row_group_size=50_000)
+            pq.write_table(
+                pa.Table.from_pandas(df), f.name,
+                row_group_size=50_000, coerce_timestamps="us", allow_truncated_timestamps=True,
+            )
             tmp_path = f.name
 
         key = f"data/fv_{i}.parquet"
