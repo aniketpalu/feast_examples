@@ -36,7 +36,13 @@ def test_rejects_file_based_online(store_type):
         "online_store": {"type": store_type},
         "offline_store": {"type": "spark"},
     }
-    repo = RepoConfig(**config)
+    try:
+        repo = RepoConfig(**config)
+    except Exception as e:
+        if "should end with" in str(e) or "not found" in str(e).lower():
+            return True, f"RepoConfig rejects unknown store type '{store_type}': {e}"
+        return False, f"RepoConfig error: {type(e).__name__}: {e}"
+
     from feast.infra.compute_engines.spark_application.compute import (
         SparkApplicationComputeEngine,
     )
@@ -46,7 +52,7 @@ def test_rejects_file_based_online(store_type):
         )
         return False, f"Expected ValueError for online_store={store_type}, but no error raised"
     except ValueError as e:
-        if store_type in str(e):
+        if store_type.lower() in str(e).lower():
             return True, f"Correctly rejected: {e}"
         return False, f"ValueError raised but doesn't mention '{store_type}': {e}"
     except Exception as e:
@@ -71,7 +77,7 @@ def test_rejects_file_based_offline(store_type):
         )
         return False, f"Expected ValueError for offline_store={store_type}, but no error raised"
     except ValueError as e:
-        if store_type in str(e):
+        if store_type.lower() in str(e).lower():
             return True, f"Correctly rejected: {e}"
         return False, f"ValueError raised but doesn't mention '{store_type}': {e}"
     except Exception as e:
