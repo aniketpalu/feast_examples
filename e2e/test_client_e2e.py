@@ -25,14 +25,16 @@ logger = logging.getLogger("e2e-client")
 
 ONLINE_SERVER = os.environ.get(
     "FEAST_ONLINE_SERVER",
-    "http://feast-byos-spark-e2e-online.aniket-cursor-test.svc.cluster.local:80",
+    "https://feast-byos-spark-e2e-online.aniket-cursor-test.svc.cluster.local:443",
 )
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 REGISTRY_HOST = os.environ.get(
     "REGISTRY_HOST",
-    "feast-byos-spark-e2e-registry.aniket-cursor-test.svc.cluster.local:80",
+    "feast-registry-insecure.aniket-cursor-test.svc.cluster.local:80",
 )
-REDIS_HOST = os.environ.get("REDIS_HOST", "redis.aniket-cursor-test.svc.cluster.local")
-REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+REDIS_HOST = os.environ.get("FEAST_REDIS_HOST", "redis.aniket-cursor-test.svc.cluster.local")
+REDIS_PORT = int(os.environ.get("FEAST_REDIS_PORT", "6379"))
 
 NUM_FVS = 10
 NUM_ENTITIES = 10_000
@@ -43,7 +45,7 @@ def check_server_health():
     """Verify the feature server is reachable."""
     logger.info(f"Checking server health at {ONLINE_SERVER}")
     try:
-        resp = requests.get(f"{ONLINE_SERVER}/health", timeout=10)
+        resp = requests.get(f"{ONLINE_SERVER}/health", timeout=10, verify=False)
         logger.info(f"Health check: {resp.status_code}")
         return resp.status_code == 200
     except Exception as e:
@@ -63,6 +65,7 @@ def trigger_materialize():
         f"{ONLINE_SERVER}/materialize",
         json=payload,
         timeout=MATERIALIZE_TIMEOUT,
+        verify=False,
     )
     logger.info(f"Response: {resp.status_code}")
     if resp.status_code != 200:
@@ -77,7 +80,10 @@ def check_fv_states():
     config = RepoConfig(
         project="feast_sparkapp_e2e",
         provider="local",
-        registry={"registry_type": "remote", "path": REGISTRY_HOST},
+        registry={
+            "registry_type": "remote",
+            "path": REGISTRY_HOST,
+        },
         offline_store={"type": "dask"},
         online_store={"type": "redis", "connection_string": f"{REDIS_HOST}:{REDIS_PORT}"},
         entity_key_serialization_version=3,
@@ -121,12 +127,14 @@ def check_online_features():
         "entities": {
             "entity_id": [0, 1, 2, 3, 4],
         },
+        "full_feature_names": True,
     }
     logger.info(f"POST {ONLINE_SERVER}/get-online-features")
     resp = requests.post(
         f"{ONLINE_SERVER}/get-online-features",
         json=payload,
         timeout=30,
+        verify=False,
     )
     if resp.status_code != 200:
         logger.error(f"get-online-features failed: {resp.status_code} {resp.text}")

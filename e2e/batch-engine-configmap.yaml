@@ -15,7 +15,7 @@ data:
     driver_cores: 1
     driver_memory: "2g"
     concurrency: 10
-    registry_address: feast-byos-spark-e2e-registry.aniket-cursor-test.svc.cluster.local:80
+    registry_address: feast-registry-insecure.aniket-cursor-test.svc.cluster.local:80
     spark_conf:
       spark.hadoop.fs.s3a.endpoint: "http://minio.aniket-cursor-test.svc.cluster.local:9000"
       spark.hadoop.fs.s3a.access.key: minioadmin
