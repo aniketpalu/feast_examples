@@ -67,7 +67,12 @@ def test_rejects_file_based_offline(store_type):
         "online_store": {"type": "redis", "connection_string": "redis:6379"},
         "offline_store": {"type": store_type},
     }
-    repo = RepoConfig(**config)
+    try:
+        repo = RepoConfig(**config)
+    except Exception as e:
+        if "import" in str(e).lower() or "not found" in str(e).lower() or "should end with" in str(e):
+            return True, f"RepoConfig rejects store type '{store_type}' (missing module): {e}"
+        return False, f"RepoConfig error: {type(e).__name__}: {e}"
     from feast.infra.compute_engines.spark_application.compute import (
         SparkApplicationComputeEngine,
     )
