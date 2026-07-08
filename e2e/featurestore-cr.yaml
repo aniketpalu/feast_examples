@@ -1,0 +1,24 @@
+apiVersion: feast.dev/v1alpha1
+kind: FeatureStore
+metadata:
+  name: byos-spark-e2e
+  namespace: aniket-cursor-test
+spec:
+  feastProjectDir:
+    git:
+      url: https://github.com/aniketpalu/feast_examples.git
+      ref: byos-spark-e2e
+      path: feature_repo_spark_application
+  batchEngine:
+    configMapRef:
+      name: feast-batch-engine-config
+  services:
+    onlineStore:
+      server:
+        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+    offlineStore:
+      server:
+        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+    registry:
+      server:
+        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0

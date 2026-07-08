@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feast-batch-engine-config
+  namespace: aniket-cursor-test
+data:
+  batch_engine.yaml: |
+    type: spark_application
+    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+    namespace: aniket-cursor-test
+    service_account: feast-spark-driver
+    executor_instances: 5
+    executor_cores: 1
+    executor_memory: "2g"
+    driver_cores: 1
+    driver_memory: "2g"
+    concurrency: 10
+    registry_address: feast-byos-spark-e2e-registry.aniket-cursor-test.svc.cluster.local:80
+    spark_conf:
+      spark.hadoop.fs.s3a.endpoint: "http://minio.aniket-cursor-test.svc.cluster.local:9000"
+      spark.hadoop.fs.s3a.access.key: minioadmin
+      spark.hadoop.fs.s3a.secret.key: minioadmin
+      spark.hadoop.fs.s3a.path.style.access: "true"
+      spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
