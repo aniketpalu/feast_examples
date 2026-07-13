@@ -1,4 +1,4 @@
-apiVersion: feast.dev/v1alpha1
+apiVersion: feast.dev/v1
 kind: FeatureStore
 metadata:
   name: spark-e2e
@@ -11,6 +11,7 @@ spec:
       ref: byos-spark-postgres
       url: 'https://github.com/aniketpalu/feast_examples.git'
   services:
+    # v1 only (PR #6598). Not present on v1alpha1 schema.
     initImage: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
     onlineStore:
       persistence:
