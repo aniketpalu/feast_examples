@@ -11,6 +11,7 @@ spec:
       ref: byos-spark-postgres
       url: 'https://github.com/aniketpalu/feast_examples.git'
   services:
+    initImage: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
     onlineStore:
       persistence:
         store:
