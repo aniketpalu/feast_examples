@@ -1,26 +1,42 @@
-apiVersion: feast.dev/v1
+apiVersion: feast.dev/v1alpha1
 kind: FeatureStore
 metadata:
-  name: byos-spark-e2e
-  namespace: aniket-cursor-test
+  name: spark-e2e
+  namespace: feast-spark
 spec:
-  feastProject: feast_sparkapp_e2e
+  feastProject: feast_spark_postgres_e2e
   feastProjectDir:
     git:
-      url: https://github.com/aniketpalu/feast_examples.git
-      ref: byos-spark-e2e
-      path: feature_repo
-  batchEngine:
-    configMapRef:
-      name: feast-batch-engine-config
+      featureRepoPath: feature_repo
+      ref: byos-spark-postgres
+      url: 'https://github.com/aniketpalu/feast_examples.git'
   services:
     onlineStore:
+      persistence:
+        store:
+          secretRef:
+            name: redis-config
+          type: redis
       server:
-        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
     offlineStore:
+      persistence:
+        store:
+          secretRef:
+            name: postgres-offline-config
+          type: postgres
       server:
-        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+        image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
     registry:
       local:
+        persistence:
+          store:
+            secretRef:
+              name: postgres-registry-config
+            type: sql
         server:
-          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-dev-1.0
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
+          restAPI: true
+  batchEngine:
+    configMapRef:
+      name: spark-batch-engine
