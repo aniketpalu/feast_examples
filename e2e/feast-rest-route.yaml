@@ -1,0 +1,35 @@
+# OpenShift Route for registry REST (Swagger /docs).
+# Apply after FeatureStore is Ready and service feast-spark-pg-e2e-registry-rest exists.
+# Pattern: https://github.com/aniketpalu/eap-artifacts/blob/main/infra-setup/feast-instance/feast-rest-route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: feast-spark-pg-e2e-registry-rest
+  namespace: feast-spark
+spec:
+  to:
+    kind: Service
+    name: feast-spark-pg-e2e-registry-rest
+    weight: 100
+  tls:
+    termination: passthrough
+  port:
+    targetPort: https
+  alternateBackends: []
+---
+# Optional: online feature server Swagger (/docs, /materialize-async)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: feast-spark-pg-e2e-online
+  namespace: feast-spark
+spec:
+  to:
+    kind: Service
+    name: feast-spark-pg-e2e-online
+    weight: 100
+  tls:
+    termination: passthrough
+  port:
+    targetPort: https
+  alternateBackends: []

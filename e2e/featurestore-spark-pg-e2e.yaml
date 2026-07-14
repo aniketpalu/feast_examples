@@ -12,6 +12,8 @@ spec:
       url: https://github.com/aniketpalu/feast_examples.git
       ref: byos-spark-postgres
       featureRepoPath: feature_repo
+  # No initImage — init containers use operator RELATED_IMAGE_FEATURE_SERVER
+  # No per-service server.image — same RELATED_IMAGE default
   services:
     offlineStore:
       persistence:
@@ -19,16 +21,14 @@ spec:
           type: postgres
           secretRef:
             name: postgres-offline-config
-      server:
-        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+      server: {}
     onlineStore:
       persistence:
         store:
           type: redis
           secretRef:
             name: redis-config
-      server:
-        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+      server: {}
     registry:
       local:
         persistence:
@@ -37,10 +37,8 @@ spec:
             secretRef:
               name: postgres-registry-config
         server:
-          image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
           restAPI: true
-    ui:
-      image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+    ui: {}
   batchEngine:
     configMapRef:
       name: spark-pg-batch-engine
