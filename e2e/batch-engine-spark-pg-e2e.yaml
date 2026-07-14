@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-pg-batch-engine
+  namespace: feast-spark
+data:
+  config: |
+    type: spark_application
+    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v7
+    namespace: feast-spark
+    service_account: feast-spark-driver
+    # Functionality-first sizing (small data). Generous resources to avoid infra OOM noise.
+    executor_instances: 2
+    executor_cores: 1
+    executor_memory: "2g"
+    driver_cores: 1
+    driver_memory: "2g"
+    concurrency: 2
+    spark_version: "4.0.1"
+    spark_conf:
+      spark.kubernetes.driver.request.cores: "1"
+      spark.kubernetes.executor.request.cores: "1"

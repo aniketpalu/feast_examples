@@ -1,0 +1,46 @@
+apiVersion: feast.dev/v1
+kind: FeatureStore
+metadata:
+  name: spark-pg-e2e
+  namespace: feast-spark
+  labels:
+    feature-store-ui: enabled
+spec:
+  feastProject: feast_spark_pg_e2e
+  feastProjectDir:
+    git:
+      url: https://github.com/aniketpalu/feast_examples.git
+      ref: byos-spark-postgres
+      featureRepoPath: feature_repo
+  services:
+    offlineStore:
+      persistence:
+        store:
+          type: postgres
+          secretRef:
+            name: postgres-offline-config
+      server:
+        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+    onlineStore:
+      persistence:
+        store:
+          type: redis
+          secretRef:
+            name: redis-config
+      server:
+        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+    registry:
+      local:
+        persistence:
+          store:
+            type: sql
+            secretRef:
+              name: postgres-registry-config
+        server:
+          image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+          restAPI: true
+    ui:
+      image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v7
+  batchEngine:
+    configMapRef:
+      name: spark-pg-batch-engine
