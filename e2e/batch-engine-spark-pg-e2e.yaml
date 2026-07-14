@@ -8,8 +8,7 @@ data:
     type: spark_application
     image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v7
     namespace: feast-spark
-    service_account: feast-spark-driver
-    # Functionality-first sizing (small data). Generous resources to avoid infra OOM noise.
+    service_account: feast-spark-pg-e2e-batch-driver
     executor_instances: 2
     executor_cores: 1
     executor_memory: "2g"
