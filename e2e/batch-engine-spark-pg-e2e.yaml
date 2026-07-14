@@ -17,5 +17,5 @@ data:
     concurrency: 2
     spark_version: "4.0.1"
     spark_conf:
-      spark.kubernetes.driver.request.cores: "1"
-      spark.kubernetes.executor.request.cores: "1"
+      spark.kubernetes.driver.request.cores: "200m"
+      spark.kubernetes.executor.request.cores: "200m"
