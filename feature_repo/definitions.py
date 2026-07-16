@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-from feast import Entity, FeatureView, Field
+import pandas as pd
+from feast import Entity, FeatureView, Field, on_demand_feature_view
 from feast.infra.offline_stores.contrib.postgres_offline_store.postgres_source import (
     PostgreSQLSource,
 )
@@ -40,3 +41,15 @@ feature_view_7 = FEATURE_VIEWS[6]
 feature_view_8 = FEATURE_VIEWS[7]
 feature_view_9 = FEATURE_VIEWS[8]
 feature_view_10 = FEATURE_VIEWS[9]
+
+
+# Small ODFV: sum of materialized metrics from feature_view_1 (computed at request time).
+@on_demand_feature_view(
+    sources=[feature_view_1],
+    schema=[Field(name="metric_sum", dtype=Float64)],
+)
+def metric_sum_odfv(inputs: pd.DataFrame) -> pd.DataFrame:
+    df = pd.DataFrame()
+    df["metric_sum"] = inputs["metric_a"] + inputs["metric_b"]
+    return df
+

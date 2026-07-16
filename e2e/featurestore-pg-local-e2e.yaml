@@ -1,0 +1,41 @@
+apiVersion: feast.dev/v1
+kind: FeatureStore
+metadata:
+  name: spark-pg-e2e
+  namespace: feast-spark
+  labels:
+    feature-store-ui: enabled
+spec:
+  feastProject: feast_spark_pg_e2e
+  feastProjectDir:
+    git:
+      url: https://github.com/aniketpalu/feast_examples.git
+      ref: byos-spark-postgres
+      featureRepoPath: feature_repo
+  # No batchEngine — materialize uses the local compute engine on the feature server.
+  # No initImage / server.image — RELATED_IMAGE_FEATURE_SERVER
+  services:
+    offlineStore:
+      persistence:
+        store:
+          type: postgres
+          secretRef:
+            name: postgres-offline-config
+      server: {}
+    onlineStore:
+      persistence:
+        store:
+          type: redis
+          secretRef:
+            name: redis-config
+      server: {}
+    registry:
+      local:
+        persistence:
+          store:
+            type: sql
+            secretRef:
+              name: postgres-registry-config
+        server:
+          restAPI: true
+    ui: {}
