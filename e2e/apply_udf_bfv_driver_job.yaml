@@ -1,0 +1,36 @@
+# One-shot Job: re-apply BatchFeatureView UDF using the Spark driver image
+# (Python 3.10) so dill bytecode matches SparkApplication materialize pods.
+#
+#   oc delete job feast-udf-bfv-apply -n feast-spark --ignore-not-found
+#   oc apply -f e2e/apply_udf_bfv_driver_job.yaml
+#   oc logs -f job/feast-udf-bfv-apply -n feast-spark
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: feast-udf-bfv-apply
+  namespace: feast-spark
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: feast-spark-pg-e2e-batch-driver
+      containers:
+        - name: apply
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v10
+          imagePullPolicy: Always
+          env:
+            - name: FEAST_EXAMPLES_REF
+              value: byos-spark-postgres
+            - name: FEAST_CA_CERT
+              value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+          command:
+            - bash
+            - -lc
+            - |
+              set -euo pipefail
+              python3 -V
+              git clone --depth 1 --branch "${FEAST_EXAMPLES_REF}" \
+                https://github.com/aniketpalu/feast_examples.git /tmp/feast_examples
+              python3 /tmp/feast_examples/e2e/apply_udf_bfv.py

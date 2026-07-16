@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pandas as pd
 from feast import Entity, FeatureView, Field
+from feast.batch_feature_view import BatchFeatureView
 from feast.on_demand_feature_view import on_demand_feature_view
 from feast.infra.offline_stores.contrib.postgres_offline_store.postgres_source import (
     PostgreSQLSource,
@@ -53,4 +54,40 @@ def metric_sum_odfv(inputs: pd.DataFrame) -> pd.DataFrame:
     df = pd.DataFrame()
     df["metric_sum"] = inputs["metric_a"] + inputs["metric_b"]
     return df
+
+
+# BatchFeatureView UDF for SparkApplication materialize (E2E-3 / RHOAIENG-57664).
+# SparkTransformationNode passes a Spark DataFrame — use PySpark ops, not pandas.
+# IMPORTANT: dill bytecode is Python-version-specific. feast-apply (feature-server)
+# and the Spark driver image must use the same Python major.minor, OR re-apply this
+# view from a process that matches the driver (see e2e/apply_udf_bfv_driver_job.yaml).
+def double_metrics(df):
+    """Double metric_a; set metric_b = doubled_a + original_b (PySpark)."""
+    from pyspark.sql import functions as F
+
+    df = df.withColumn("metric_a", F.col("metric_a") * 2.0)
+    df = df.withColumn("metric_b", F.col("metric_a") + F.col("metric_b"))
+    return df
+
+
+udf_double_metrics = BatchFeatureView(
+    name="udf_double_metrics",
+    mode="python",
+    entities=[entity],
+    ttl=timedelta(days=3650),
+    schema=[
+        Field(name="metric_a", dtype=Float64),
+        Field(name="metric_b", dtype=Float64),
+        Field(name="metric_c", dtype=Float64),
+        Field(name="category", dtype=String),
+        Field(name="score", dtype=Float64),
+    ],
+    source=PostgreSQLSource(
+        name="udf_double_metrics_source",
+        table="fv_1",
+        timestamp_field="event_timestamp",
+    ),
+    udf=double_metrics,
+    online=True,
+)
 
