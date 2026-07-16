@@ -63,6 +63,10 @@ def metric_sum_odfv(inputs: pd.DataFrame) -> pd.DataFrame:
 # IMPORTANT: dill bytecode is Python-version-specific. feast-apply (feature-server)
 # and the Spark driver image must use the same Python major.minor, OR re-apply this
 # view from a process that matches the driver (see e2e/apply_udf_bfv_driver_job.yaml).
+#
+# mode must be "sql" (not "python") when offline store is Postgres: Feast's
+# get_column_info clears feature_cols for python/pandas/ray (meaning "SELECT *"),
+# but Postgres interprets [] as no feature columns.
 def double_metrics(df):
     """Double metric_a; set metric_b = doubled_a + original_b (PySpark Columns)."""
     df = df.withColumn("metric_a", df["metric_a"] * 2.0)
@@ -77,7 +81,10 @@ if double_metrics.__module__ != "__main__":
 
 udf_double_metrics = BatchFeatureView(
     name="udf_double_metrics",
-    mode="python",
+    # mode=python clears feature_cols ([]) to mean "read all source cols" for Ray/pandas.
+    # Postgres offline store treats [] as "no feature columns", so the UDF only sees
+    # entity_id + event_timestamp. mode=sql keeps schema feature columns in the read.
+    mode="sql",
     entities=[entity],
     ttl=timedelta(days=3650),
     schema=[
