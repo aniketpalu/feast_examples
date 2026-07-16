@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 import pandas as pd
-from feast import Entity, FeatureView, Field, on_demand_feature_view
+from feast import Entity, FeatureView, Field
+from feast.on_demand_feature_view import on_demand_feature_view
 from feast.infra.offline_stores.contrib.postgres_offline_store.postgres_source import (
     PostgreSQLSource,
 )
