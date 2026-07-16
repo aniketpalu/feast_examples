@@ -57,16 +57,16 @@ def metric_sum_odfv(inputs: pd.DataFrame) -> pd.DataFrame:
 
 
 # BatchFeatureView UDF for SparkApplication materialize (E2E-3 / RHOAIENG-57664).
-# SparkTransformationNode passes a Spark DataFrame — use PySpark ops, not pandas.
+# SparkTransformationNode passes a Spark DataFrame — use Column ops, not pandas.
+# Avoid `from pyspark.sql import functions as F` inside the UDF: dill-deserialized
+# nested pyspark imports segfault on Spark 4.0.1 / this driver image (exit 139).
 # IMPORTANT: dill bytecode is Python-version-specific. feast-apply (feature-server)
 # and the Spark driver image must use the same Python major.minor, OR re-apply this
 # view from a process that matches the driver (see e2e/apply_udf_bfv_driver_job.yaml).
 def double_metrics(df):
-    """Double metric_a; set metric_b = doubled_a + original_b (PySpark)."""
-    from pyspark.sql import functions as F
-
-    df = df.withColumn("metric_a", F.col("metric_a") * 2.0)
-    df = df.withColumn("metric_b", F.col("metric_a") + F.col("metric_b"))
+    """Double metric_a; set metric_b = doubled_a + original_b (PySpark Columns)."""
+    df = df.withColumn("metric_a", df["metric_a"] * 2.0)
+    df = df.withColumn("metric_b", df["metric_a"] + df["metric_b"])
     return df
 
 
