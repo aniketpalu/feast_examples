@@ -1,7 +1,10 @@
 """Load a SMALL Postgres dataset for functionality E2E (not scale).
 
-Default: 2 tables x 1,000 rows x 100 entities.
+Default: 10 tables x 1,000 rows x 100 entities (matches feature_repo FV count).
 Run inside the cluster (notebook or a one-shot pod) with network to postgres:5432.
+
+Load these offline tables BEFORE applying the FeatureStore CR — feast-apply
+introspects PostgreSQLSource tables and CrashLoops if they are missing.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ PG_URL = os.environ.get(
     "PG_URL",
     "postgresql+psycopg://feast:feast@postgres:5432/feast",
 )
-NUM_FVS = int(os.environ.get("NUM_FVS", "2"))
+NUM_FVS = int(os.environ.get("NUM_FVS", "10"))
 ROWS_PER_FV = int(os.environ.get("ROWS_PER_FV", "1000"))
 NUM_ENTITIES = int(os.environ.get("NUM_ENTITIES", "100"))
 CATEGORIES = ["electronics", "clothing", "food", "automotive", "software"]

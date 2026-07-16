@@ -6,7 +6,7 @@ metadata:
 data:
   config: |
     type: spark_application
-    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v6
+    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v9
     namespace: feast-spark
     service_account: feast-spark-driver
     executor_instances: 5

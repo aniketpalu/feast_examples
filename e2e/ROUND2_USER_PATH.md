@@ -7,12 +7,14 @@
 #   - Postgres + Redis running
 #
 # User steps:
-#   1. oc apply -f e2e/batch-engine-spark-pg-e2e.yaml
-#   2. oc apply -f e2e/featurestore-spark-pg-e2e.yaml
-#   3. Wait FeatureStore Ready
-#   4. oc apply -f e2e/feast-rest-route.yaml   # optional Swagger routes
-#   5. Load data (setup_postgres_small.py)
+#   1. Load offline store tables FIRST (setup_postgres_small.py — default 10 FVs)
+#      feast-apply introspects PostgreSQLSource tables; missing tables → CrashLoop
+#   2. oc apply -f e2e/batch-engine-spark-pg-e2e.yaml
+#   3. oc apply -f e2e/featurestore-spark-pg-e2e.yaml
+#   4. Wait FeatureStore Ready
+#   5. oc apply -f e2e/feast-rest-route.yaml   # optional Swagger routes
 #   6. From notebook: materialize(..., remote=True)
+#      Requires a Feast client build that supports remote=True (#6590)
 #
 # Intentionally omitted:
 #   - service_account in batch ConfigMap (operator creates feast-<cr>-batch-driver)
