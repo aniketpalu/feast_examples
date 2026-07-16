@@ -70,6 +70,11 @@ def double_metrics(df):
     return df
 
 
+# dill must not require a same-named module on the registry server / driver.
+if double_metrics.__module__ != "__main__":
+    double_metrics.__module__ = "__main__"
+
+
 udf_double_metrics = BatchFeatureView(
     name="udf_double_metrics",
     mode="python",
