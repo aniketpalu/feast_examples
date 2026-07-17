@@ -18,7 +18,7 @@ spec:
       serviceAccountName: feast-spark-pg-e2e-batch-driver
       containers:
         - name: apply
-          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v10
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v11
           imagePullPolicy: Always
           env:
             - name: FEAST_EXAMPLES_REF
