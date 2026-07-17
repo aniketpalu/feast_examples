@@ -13,6 +13,9 @@ spec:
       ref: byos-spark-postgres
       featureRepoPath: feature_repo_spark_source_udf
   services:
+    # SparkSource.validate needs a JVM; feature-server has pyspark but no JAVA_HOME.
+    # Apply via e2e/apply_udf_spark_source_driver_job.yaml instead.
+    runFeastApplyOnInit: false
     offlineStore:
       persistence:
         store:

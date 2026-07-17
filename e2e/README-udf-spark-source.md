@@ -29,3 +29,11 @@ oc apply -f e2e/apply_udf_spark_source_driver_job.yaml
 # 4) Notebook materialize (no Feast restart)
 PYTHONPATH=/tmp/feast_merged_sdk python3 e2e/notebook_udf_spark_source_test.py
 ```
+
+## Friction: feast-apply + SparkSource
+
+`SparkSource.validate()` starts a local SparkSession. feature-server has PySpark
+but **no JVM / JAVA_HOME** → feast-apply CrashLoop.
+
+Workaround used: `services.runFeastApplyOnInit: false` + driver Job apply
+(`apply_udf_spark_source_driver_job.yaml`).
