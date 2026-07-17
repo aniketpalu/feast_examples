@@ -6,7 +6,7 @@ metadata:
 data:
   config: |
     type: spark_application
-    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v11
+    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v12
     namespace: feast-spark
     # service_account omitted — Feast Operator creates feast-<cr>-batch-driver
     executor_instances: 2

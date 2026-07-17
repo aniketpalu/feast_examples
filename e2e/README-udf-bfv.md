@@ -1,28 +1,18 @@
 # BatchFeatureView UDF (SparkApplication E2E)
 
-`definitions.py` defines `udf_double_metrics` (PySpark `double_metrics` on `fv_1`).
-The UDF is mainify'd and avoids nested `from pyspark.sql import functions`
-(dill + nested pyspark import segfaulted on Spark 4.0.1 / exit 139).
+`definitions.py` defines `udf_double_metrics` on `fv_1`.
 
-## Constraints
+## Constraints / driver fixes (byos-spark-e2e-v12)
 
-1. **Python version:** `feast apply` for this UDF and the Spark driver must share
-   the same Python major.minor (dill bytecode). feature-server feast-apply is
-   often 3.12 while the driver is 3.10 — re-apply with the driver Job below.
-2. **Postgres empty feature_cols:** `mode=python` clears `feature_cols` to mean
-   SELECT *. Postgres must treat that as `a.*` (fixed in driver
-   `byos-spark-e2e-v11`).
-
-## Run
+1. **dill Python version** — apply UDF from driver Job (3.10), not feature-server (3.12).
+2. **No nested `import pyspark` inside UDF** — can segfault after dill.
+3. **Postgres empty feature_cols** — `mode=python` clears cols to mean SELECT *;
+   driver patches `pull_latest` to `DISTINCT ON` / `a.*`.
+4. **dill + Spark DataFrame ops segfault** — driver re-execs `udf_string` in
+   `SparkTransformationNode` instead of calling the dill callable. Definitions
+   must set `udf_string=dill.source.getsource(...)`.
 
 ```bash
-oc delete job feast-udf-bfv-apply -n feast-spark --ignore-not-found
 oc apply -f e2e/apply_udf_bfv_driver_job.yaml
-oc logs -f job/feast-udf-bfv-apply -n feast-spark
-
-# notebook (merged SDK with remote=True):
 PYTHONPATH=/tmp/feast_merged_sdk python3 e2e/notebook_udf_bfv_test.py
 ```
-
-Expect: SparkApplication COMPLETED; online `metric_a == 2*raw_a`,
-`metric_b == 2*raw_a + raw_b` for entities 1..5.

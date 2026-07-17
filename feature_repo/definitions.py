@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+import dill
+
 import pandas as pd
 from feast import Entity, FeatureView, Field
 from feast.batch_feature_view import BatchFeatureView
@@ -97,6 +99,9 @@ udf_double_metrics = BatchFeatureView(
         timestamp_field="event_timestamp",
     ),
     udf=double_metrics,
+    # Required so SparkTransformationNode can re-exec instead of calling
+    # dill-deserialized bytecode (segfaults on Spark 4.0.1 DataFrame ops).
+    udf_string=dill.source.getsource(double_metrics),
     online=True,
 )
 
