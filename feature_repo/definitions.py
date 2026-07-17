@@ -76,6 +76,9 @@ def double_metrics(df):
     return df
 
 
+# Capture source BEFORE mainify — dill.source breaks once __module__ is __main__.
+_DOUBLE_METRICS_SRC = dill.source.getsource(double_metrics)
+
 # dill must not require a same-named module on the registry server / driver.
 if double_metrics.__module__ != "__main__":
     double_metrics.__module__ = "__main__"
@@ -101,7 +104,7 @@ udf_double_metrics = BatchFeatureView(
     udf=double_metrics,
     # Required so SparkTransformationNode can re-exec instead of calling
     # dill-deserialized bytecode (segfaults on Spark 4.0.1 DataFrame ops).
-    udf_string=dill.source.getsource(double_metrics),
+    udf_string=_DOUBLE_METRICS_SRC,
     online=True,
 )
 
