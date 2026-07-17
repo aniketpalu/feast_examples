@@ -1,0 +1,42 @@
+apiVersion: feast.dev/v1
+kind: FeatureStore
+metadata:
+  name: spark-src-udf
+  namespace: feast-spark
+  labels:
+    feature-store-ui: enabled
+spec:
+  feastProject: feast_spark_src_udf
+  feastProjectDir:
+    git:
+      url: https://github.com/aniketpalu/feast_examples.git
+      ref: byos-spark-postgres
+      featureRepoPath: feature_repo_spark_source_udf
+  services:
+    offlineStore:
+      persistence:
+        store:
+          type: spark
+          secretRef:
+            name: spark-offline-config
+      server: {}
+    onlineStore:
+      persistence:
+        store:
+          type: redis
+          secretRef:
+            name: redis-config
+      server: {}
+    registry:
+      local:
+        persistence:
+          store:
+            type: sql
+            secretRef:
+              name: postgres-registry-config
+        server:
+          restAPI: true
+    ui: {}
+  batchEngine:
+    configMapRef:
+      name: spark-source-udf-batch-engine

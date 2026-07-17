@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: feast-udf-ss-apply
+  namespace: feast-spark
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: feast-spark-src-udf-batch-driver
+      containers:
+        - name: apply
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v14
+          imagePullPolicy: Always
+          env:
+            - name: FEAST_EXAMPLES_REF
+              value: byos-spark-postgres
+            - name: FEAST_FEATURE_REPO
+              value: feature_repo_spark_source_udf
+            - name: MINIO_ENDPOINT
+              value: http://minio:9000
+          command:
+            - bash
+            - -lc
+            - |
+              set -euo pipefail
+              python3 -V
+              git clone --depth 1 --branch "${FEAST_EXAMPLES_REF}" \
+                https://github.com/aniketpalu/feast_examples.git /tmp/feast_examples
+              python3 /tmp/feast_examples/e2e/apply_udf_spark_source.py
