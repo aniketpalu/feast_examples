@@ -1,5 +1,7 @@
-setup_data.py
-setup_data_local.py
-test_materialize.py
-e2e-job.yaml
-setup-pod.yaml
+# Feast ignore
+data/
+prepare_data.py
+README.md
+__pycache__/
+*.pyc
+.ipynb_checkpoints

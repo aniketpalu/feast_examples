@@ -1,110 +1,56 @@
+"""Option A — Feast RAG feature repo (pre-embedded cities → SparkApplication).
+
+SparkApplication materializes existing 384-d vectors from MinIO into a vector
+online store (Milvus). No embedding UDF — vectors are already in the parquet.
+
+Source data: feast-dev/feast examples/rag city Wikipedia summaries (811 rows).
+Upload path: see prepare_data.py → s3a://feast-rag/city_embeddings.parquet
+"""
+
 from datetime import timedelta
 
-import dill
-
-import pandas as pd
 from feast import Entity, FeatureView, Field
-from feast.batch_feature_view import BatchFeatureView
-from feast.on_demand_feature_view import on_demand_feature_view
-from feast.infra.offline_stores.contrib.postgres_offline_store.postgres_source import (
-    PostgreSQLSource,
+from feast.infra.offline_stores.contrib.spark_offline_store.spark_source import (
+    SparkSource,
 )
-from feast.types import Float64, String
+from feast.types import Array, Float32, String
+from feast.value_type import ValueType
 
-entity = Entity(name="entity_id", join_keys=["entity_id"])
+# MinIO / S3A bucket used by the SparkApplication offline store.
+MINIO_BUCKET = "feast-rag"
+PARQUET_PATH = f"s3a://{MINIO_BUCKET}/city_embeddings.parquet"
 
-FEATURE_VIEWS = []
-for i in range(1, 11):
-    source = PostgreSQLSource(
-        name=f"fv_{i}_source",
-        table=f"fv_{i}",
-        timestamp_field="event_timestamp",
-    )
-    fv = FeatureView(
-        name=f"feature_view_{i}",
-        entities=[entity],
-        schema=[
-            Field(name="metric_a", dtype=Float64),
-            Field(name="metric_b", dtype=Float64),
-            Field(name="metric_c", dtype=Float64),
-            Field(name="category", dtype=String),
-            Field(name="score", dtype=Float64),
-        ],
-        source=source,
-        ttl=timedelta(days=3650),
-    )
-    FEATURE_VIEWS.append(fv)
-
-feature_view_1 = FEATURE_VIEWS[0]
-feature_view_2 = FEATURE_VIEWS[1]
-feature_view_3 = FEATURE_VIEWS[2]
-feature_view_4 = FEATURE_VIEWS[3]
-feature_view_5 = FEATURE_VIEWS[4]
-feature_view_6 = FEATURE_VIEWS[5]
-feature_view_7 = FEATURE_VIEWS[6]
-feature_view_8 = FEATURE_VIEWS[7]
-feature_view_9 = FEATURE_VIEWS[8]
-feature_view_10 = FEATURE_VIEWS[9]
-
-
-# Small ODFV: sum of materialized metrics from feature_view_1 (computed at request time).
-@on_demand_feature_view(
-    sources=[feature_view_1],
-    schema=[Field(name="metric_sum", dtype=Float64)],
+item = Entity(
+    name="item_id",
+    join_keys=["item_id"],
+    value_type=ValueType.INT64,
+    description="City Wikipedia chunk / document id for RAG retrieval",
 )
-def metric_sum_odfv(inputs: pd.DataFrame) -> pd.DataFrame:
-    df = pd.DataFrame()
-    df["metric_sum"] = inputs["metric_a"] + inputs["metric_b"]
-    return df
 
+city_embeddings_source = SparkSource(
+    name="city_embeddings_source",
+    path=PARQUET_PATH,
+    file_format="parquet",
+    timestamp_field="event_timestamp",
+)
 
-# BatchFeatureView UDF for SparkApplication materialize (E2E-3 / RHOAIENG-57664).
-# SparkTransformationNode passes a Spark DataFrame — use Column ops, not pandas.
-# Avoid `from pyspark.sql import functions as F` inside the UDF: dill-deserialized
-# nested pyspark imports segfault on Spark 4.0.1 / this driver image (exit 139).
-# IMPORTANT: dill bytecode is Python-version-specific. feast-apply (feature-server)
-# and the Spark driver image must use the same Python major.minor, OR re-apply this
-# view from a process that matches the driver (see e2e/apply_udf_bfv_driver_job.yaml).
-#
-# Requires Postgres offline store to treat empty feature_cols as SELECT * (Feast
-# signals that for mode=python transformations). See driver image patch /
-# feast postgres pull_latest empty-cols fix.
-def double_metrics(df):
-    """Double metric_a; set metric_b = doubled_a + original_b (PySpark Columns)."""
-    df = df.withColumn("metric_a", df["metric_a"] * 2.0)
-    df = df.withColumn("metric_b", df["metric_a"] + df["metric_b"])
-    return df
-
-
-# Capture source BEFORE mainify — dill.source breaks once __module__ is __main__.
-_DOUBLE_METRICS_SRC = dill.source.getsource(double_metrics)
-
-# dill must not require a same-named module on the registry server / driver.
-if double_metrics.__module__ != "__main__":
-    double_metrics.__module__ = "__main__"
-
-
-udf_double_metrics = BatchFeatureView(
-    name="udf_double_metrics",
-    mode="python",
-    entities=[entity],
+city_embeddings = FeatureView(
+    name="city_embeddings",
+    entities=[item],
     ttl=timedelta(days=3650),
     schema=[
-        Field(name="metric_a", dtype=Float64),
-        Field(name="metric_b", dtype=Float64),
-        Field(name="metric_c", dtype=Float64),
-        Field(name="category", dtype=String),
-        Field(name="score", dtype=Float64),
+        Field(
+            name="vector",
+            dtype=Array(Float32),
+            vector_index=True,
+            vector_search_metric="COSINE",
+            description="384-d MiniLM embedding (pre-computed in parquet)",
+        ),
+        Field(name="state", dtype=String),
+        Field(name="sentence_chunks", dtype=String),
+        Field(name="wiki_summary", dtype=String),
     ],
-    source=PostgreSQLSource(
-        name="udf_double_metrics_source",
-        table="fv_1",
-        timestamp_field="event_timestamp",
-    ),
-    udf=double_metrics,
-    # Required so SparkTransformationNode can re-exec instead of calling
-    # dill-deserialized bytecode (segfaults on Spark 4.0.1 DataFrame ops).
-    udf_string=_DOUBLE_METRICS_SRC,
+    source=city_embeddings_source,
     online=True,
+    tags={"use_case": "rag", "option": "A", "compute": "none"},
 )
-
