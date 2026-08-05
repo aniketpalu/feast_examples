@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spark-rag-apply
+  namespace: feast-spark
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: feast-spark-rag-batch-driver
+      containers:
+        - name: apply
+          image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v18
+          imagePullPolicy: Always
+          env:
+            - name: FEAST_EXAMPLES_REF
+              value: feast-rag
+            - name: FEAST_FEATURE_REPO
+              value: feature_repo
+            - name: MINIO_ENDPOINT
+              value: http://minio:9000
+            - name: MILVUS_HOST
+              value: http://milvus
+            - name: MILVUS_PORT
+              value: "19530"
+          command:
+            - bash
+            - -lc
+            - |
+              set -euo pipefail
+              python3 -V
+              git clone --depth 1 --branch "${FEAST_EXAMPLES_REF}" \
+                https://github.com/aniketpalu/feast_examples.git /tmp/feast_examples
+              python3 /tmp/feast_examples/e2e/rag/apply_rag.py

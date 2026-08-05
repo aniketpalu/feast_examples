@@ -1,0 +1,49 @@
+apiVersion: feast.dev/v1
+kind: FeatureStore
+metadata:
+  name: spark-rag
+  namespace: feast-spark
+  labels:
+    feature-store-ui: enabled
+spec:
+  feastProject: feast_spark_rag
+  feastProjectDir:
+    git:
+      url: https://github.com/aniketpalu/feast_examples.git
+      ref: feast-rag
+      featureRepoPath: feature_repo
+  services:
+    # SparkSource.validate needs JVM; apply via driver Job instead.
+    runFeastApplyOnInit: false
+    initImage: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v18
+    offlineStore:
+      persistence:
+        store:
+          type: spark
+          secretRef:
+            name: spark-offline-config
+      server:
+        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v18
+    onlineStore:
+      persistence:
+        store:
+          type: milvus
+          secretRef:
+            name: milvus-config
+      server:
+        image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v18
+    registry:
+      local:
+        persistence:
+          store:
+            type: sql
+            secretRef:
+              name: postgres-registry-config
+        server:
+          image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v18
+          restAPI: true
+    ui:
+      image: quay.io/aniket-redhat/feature-server:byos-spark-e2e-v18
+  batchEngine:
+    configMapRef:
+      name: spark-rag-batch-engine

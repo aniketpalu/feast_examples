@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-rag-batch-engine
+  namespace: feast-spark
+data:
+  config: |
+    type: spark_application
+    image: quay.io/aniket-redhat/feast-spark-driver:byos-spark-e2e-v18
+    namespace: feast-spark
+    executor_instances: 2
+    executor_cores: 1
+    executor_memory: "2g"
+    driver_cores: 1
+    driver_memory: "2g"
+    concurrency: 1
+    spark_version: "4.0.1"
+    spark_conf:
+      spark.kubernetes.driver.request.cores: "200m"
+      spark.kubernetes.executor.request.cores: "200m"
+      spark.hadoop.fs.s3a.endpoint: "http://minio:9000"
+      spark.hadoop.fs.s3a.access.key: minioadmin
+      spark.hadoop.fs.s3a.secret.key: minioadmin
+      spark.hadoop.fs.s3a.path.style.access: "true"
+      spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+      spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+      spark.kubernetes.driverEnv.AWS_ACCESS_KEY_ID: minioadmin
+      spark.kubernetes.driverEnv.AWS_SECRET_ACCESS_KEY: minioadmin
+      spark.kubernetes.driverEnv.AWS_ENDPOINT_URL: "http://minio:9000"
+      spark.kubernetes.driverEnv.AWS_DEFAULT_REGION: us-east-1

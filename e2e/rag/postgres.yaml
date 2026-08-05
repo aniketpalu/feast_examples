@@ -1,0 +1,54 @@
+# Postgres for SQL registry (recreate — endpoints were empty).
+# Matches secret postgres-registry-config:
+#   path: postgresql+psycopg://feast:feast@postgres:5432/feast
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: feast-spark
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: quay.io/sclorg/postgresql-15-c9s:latest
+          env:
+            - name: POSTGRESQL_USER
+              value: feast
+            - name: POSTGRESQL_PASSWORD
+              value: feast
+            - name: POSTGRESQL_DATABASE
+              value: feast
+          ports:
+            - containerPort: 5432
+              name: postgres
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+---
+# Service "postgres" already exists in feast-spark; patch selector if needed.
+# This manifest is idempotent when applied with --server-side or if Service matches.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: feast-spark
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
