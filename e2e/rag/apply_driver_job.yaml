@@ -31,8 +31,9 @@ spec:
             - |
               set -euo pipefail
               python3 -V
-              # Driver image has JVM/PySpark for SparkSource.validate but not pymilvus
-              pip install -q 'pymilvus>=2.4,<3.1'
+              # Driver image lacks pymilvus; install to writable path (non-root)
+              pip install -q --target=/tmp/pydeps 'pymilvus>=2.4,<3.1'
+              export PYTHONPATH=/tmp/pydeps:${PYTHONPATH:-}
               git clone --depth 1 --branch "${FEAST_EXAMPLES_REF}" \
                 https://github.com/aniketpalu/feast_examples.git /tmp/feast_examples
               python3 /tmp/feast_examples/e2e/rag/apply_rag.py
