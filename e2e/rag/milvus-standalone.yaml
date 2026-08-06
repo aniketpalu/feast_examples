@@ -37,7 +37,7 @@ spec:
       serviceAccountName: milvus
       containers:
         - name: milvus
-          image: docker.io/milvusdb/milvus:v2.4.15
+          image: quay.io/aniket-redhat/milvus:v2.4.15
           args: ["milvus", "run", "standalone"]
           env:
             - name: ETCD_USE_EMBED
